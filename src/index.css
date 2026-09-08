@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: 'Inter', 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  
+  --color-accent-500: #f43f5e;
+  
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  
+  --color-text-900: #0f172a;
+  --color-text-700: #334155;
+  --color-text-500: #64748b;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', 'Vazirmatn', system-ui, sans-serif;
+    color: var(--color-text-900);
+    background-color: var(--color-surface-50);
+  }
+  
+  html[dir="rtl"] {
+    font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 20px);
+  }
+}
+

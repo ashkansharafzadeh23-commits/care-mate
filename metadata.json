@@ -1,0 +1,8 @@
+{
+  "name": "CareMate",
+  "description": "AI-powered bilingual care coordinator app for families.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

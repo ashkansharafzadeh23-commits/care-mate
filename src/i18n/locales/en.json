@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "emergency": "Emergency",
+    "emergency_call": "Call 911"
+  },
+  "landing": {
+    "headline": "Peace of mind for the ones who care from afar",
+    "subheadline": "AI-powered care coordination for your aging parents.",
+    "pillar1": "Trusted caregivers",
+    "pillar2": "AI coordinates for you",
+    "pillar3": "One dashboard for the whole family",
+    "get_started": "Get Started",
+    "login": "I already have an account",
+    "register_caregiver": "Register as Caregiver"
+  },
+  "provider_onboarding": {
+    "title": "Caregiver Registration",
+    "subtitle": "Join our network of trusted professionals.",
+    "full_name": "Full Name",
+    "specialties": "Specialties (e.g. Dementia, Mobility)",
+    "hourly_rate": "Hourly Rate ($)",
+    "upload_id": "Upload ID / Certificate",
+    "upload_photo": "Upload Profile Photo",
+    "submit": "Register"
+  },
+  "map_controls": {
+    "current_location": "Current Location",
+    "map_type_roadmap": "Roadmap",
+    "map_type_satellite": "Satellite"
+  },
+  "nav": {
+    "home": "Home",
+    "find_care": "Find Care",
+    "health": "Health",
+    "chat": "Ask CareMate",
+    "dashboard": "Dashboard",
+    "settings": "Settings"
+  },
+  "onboarding": {
+    "welcome": "Welcome to CareMate",
+    "subtitle": "Peace of mind for your family's care.",
+    "select_language": "Select Language",
+    "get_started": "Get Started",
+    "signup": "Sign Up",
+    "invite_family": "Invite Family",
+    "invite_desc": "Share this link with your siblings or relatives to manage care together.",
+    "share_link": "Share Invite Link",
+    "skip": "Skip for now",
+    "add_parent": "Add Loved One",
+    "parent_name": "Name",
+    "parent_age": "Age",
+    "care_needs": "Basic Care Needs",
+    "continue": "Continue"
+  },
+  "home": {
+    "greeting": "Hello, {{name}}",
+    "find_care_title": "Find Care",
+    "find_care_desc": "Nurses, therapists & companions",
+    "health_title": "{{name}}'s Health",
+    "health_desc": "Vitals, meds & appointments",
+    "chat_title": "Ask CareMate",
+    "chat_desc": "AI care coordinator",
+    "emergency_warning": "If this is a medical emergency, please call emergency services immediately."
+  },
+  "chat": {
+    "placeholder": "Describe what you need...",
+    "send": "Send",
+    "disclaimer": "I am an AI assistant and cannot provide medical diagnoses. For emergencies, please contact emergency services.",
+    "booking_cta": "Book this Caregiver"
+  },
+  "results": {
+    "title": "Matched Providers",
+    "match_score": "{{score}}% Match",
+    "verified": "Identity Verified",
+    "background_checked": "Background Checked",
+    "license_verified": "License Verified",
+    "view_profile": "View Profile",
+    "book": "Book",
+    "distance": "{{dist}} away",
+    "rate": "${{rate}}/hr",
+    "years_exp": "{{years}} yrs exp"
+  },
+  "find_care_map": {
+    "title": "Find Care",
+    "nearby_caregivers": "Nearby Caregivers",
+    "view_list": "View List",
+    "search_area": "Search this area",
+    "filter_rating": "Rating",
+    "filter_availability": "Availability",
+    "filter_specialty": "Specialty",
+    "all_ratings": "All Ratings",
+    "rating_4_5": "4.5+ Stars",
+    "all_availability": "Any Time",
+    "avail_today": "Available Today",
+    "avail_this_week": "This Week",
+    "all_specialties": "All Specialties",
+    "spec_dementia": "Dementia Care",
+    "spec_mobility": "Mobility Support",
+    "message": "Message",
+    "travel_time": "Est. travel: {{time}}"
+  },
+  "profile": {
+    "about": "About",
+    "specialties": "Specialties",
+    "reviews": "Reviews",
+    "book_now": "Book Now"
+  },
+  "booking": {
+    "title": "Confirm Booking",
+    "schedule": "Schedule",
+    "price_breakdown": "Price Breakdown",
+    "total": "Total",
+    "confirm_pay": "Confirm & Pay",
+    "success": "Booking Confirmed!",
+    "message_caregiver": "Message Caregiver",
+    "back_home": "Back to Home"
+  },
+  "dashboard": {
+    "title": "{{name}}'s Care — Today",
+    "medications": "Medications",
+    "meds_status": "{{completed}} / {{total}} completed",
+    "caregiver": "Caregiver",
+    "vitals": "Vitals",
+    "next_appointment": "Next Appointment",
+    "alerts": "Alerts",
+    "no_alerts": "No alerts today. Everything looks good.",
+    "family_circle": "Family Circle"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "payment": "Payment Methods",
+    "subscription": "CareMate Plus",
+    "logout": "Log Out"
+  }
+}

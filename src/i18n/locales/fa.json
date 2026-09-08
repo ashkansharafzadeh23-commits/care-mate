@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "در حال بارگذاری...",
+    "error": "خطایی رخ داد",
+    "back": "بازگشت",
+    "next": "بعدی",
+    "save": "ذخیره",
+    "cancel": "لغو",
+    "confirm": "تایید",
+    "emergency": "اضطراری",
+    "emergency_call": "تماس با اورژانس"
+  },
+  "landing": {
+    "headline": "آرامش خاطر برای آن‌ها که از راه دور مراقبت می‌کنند",
+    "subheadline": "هماهنگی مراقبت والدین سالمند شما با کمک هوش مصنوعی.",
+    "pillar1": "مراقبان قابل اعتماد",
+    "pillar2": "هوش مصنوعی برای شما هماهنگ می‌کند",
+    "pillar3": "یک داشبورد برای کل خانواده",
+    "get_started": "شروع کنید",
+    "login": "من از قبل حساب کاربری دارم",
+    "register_caregiver": "ثبت نام به عنوان پرستار"
+  },
+  "provider_onboarding": {
+    "title": "ثبت نام پرستار",
+    "subtitle": "به شبکه متخصصین مورد اعتماد ما بپیوندید.",
+    "full_name": "نام و نام خانوادگی",
+    "specialties": "تخصص‌ها",
+    "hourly_rate": "دستمزد ساعتی ($)",
+    "upload_id": "آپلود مدرک/گواهینامه",
+    "upload_photo": "آپلود عکس پروفایل",
+    "submit": "ثبت نام"
+  },
+  "map_controls": {
+    "current_location": "مکان فعلی",
+    "map_type_roadmap": "نقشه",
+    "map_type_satellite": "ماهواره"
+  },
+  "nav": {
+    "home": "خانه",
+    "find_care": "یافتن مراقب",
+    "health": "سلامت",
+    "chat": "پرسش از CareMate",
+    "dashboard": "داشبورد",
+    "settings": "تنظیمات"
+  },
+  "onboarding": {
+    "welcome": "به CareMate خوش آمدید",
+    "subtitle": "آرامش خاطر برای مراقبت از خانواده شما.",
+    "select_language": "انتخاب زبان",
+    "get_started": "شروع کنید",
+    "signup": "ثبت نام",
+    "invite_family": "دعوت از خانواده",
+    "invite_desc": "این لینک را با خواهر، برادر یا بستگان خود به اشتراک بگذارید تا مراقبت را با هم مدیریت کنید.",
+    "share_link": "اشتراک لینک دعوت",
+    "skip": "فعلاً رد شوید",
+    "add_parent": "افزودن عزیز",
+    "parent_name": "نام",
+    "parent_age": "سن",
+    "care_needs": "نیازهای اولیه مراقبتی",
+    "continue": "ادامه"
+  },
+  "home": {
+    "greeting": "سلام، {{name}}",
+    "find_care_title": "یافتن مراقب",
+    "find_care_desc": "پرستاران، درمانگران و همراهان",
+    "health_title": "وضعیت سلامت {{name}}",
+    "health_desc": "علائم حیاتی، داروها و نوبت‌ها",
+    "chat_title": "پرسش از CareMate",
+    "chat_desc": "دستیار هوشمند مراقبت",
+    "emergency_warning": "اگر این یک اورژانس پزشکی است، لطفاً بلافاصله با خدمات اورژانس تماس بگیرید."
+  },
+  "chat": {
+    "placeholder": "نیاز خود را توضیح دهید...",
+    "send": "ارسال",
+    "disclaimer": "من یک دستیار هوش مصنوعی هستم و نمی‌توانم تشخیص پزشکی ارائه دهم. برای موارد اضطراری، با اورژانس تماس بگیرید.",
+    "booking_cta": "رزرو این مراقب"
+  },
+  "results": {
+    "title": "مراقبان پیشنهادی",
+    "match_score": "{{score}}٪ تطابق",
+    "verified": "هویت تایید شده",
+    "background_checked": "پیشینه بررسی شده",
+    "license_verified": "مجوز تایید شده",
+    "view_profile": "مشاهده پروفایل",
+    "book": "رزرو",
+    "distance": "{{dist}} فاصله",
+    "rate": "${{rate}}/ساعت",
+    "years_exp": "{{years}} سال تجربه"
+  },
+  "find_care_map": {
+    "title": "یافتن مراقب",
+    "nearby_caregivers": "مراقبان نزدیک",
+    "view_list": "مشاهده لیست",
+    "search_area": "جستجو در این منطقه",
+    "filter_rating": "امتیاز",
+    "filter_availability": "دسترسی",
+    "filter_specialty": "تخصص",
+    "all_ratings": "همه امتیازها",
+    "rating_4_5": "+۴.۵ ستاره",
+    "all_availability": "هر زمان",
+    "avail_today": "امروز در دسترس",
+    "avail_this_week": "این هفته",
+    "all_specialties": "همه تخصص‌ها",
+    "spec_dementia": "مراقبت زوال عقل",
+    "spec_mobility": "پشتیبانی حرکتی",
+    "message": "پیام",
+    "travel_time": "زمان تخمینی: {{time}}"
+  },
+  "profile": {
+    "about": "درباره",
+    "specialties": "تخصص‌ها",
+    "reviews": "نظرات",
+    "book_now": "همین الان رزرو کنید"
+  },
+  "booking": {
+    "title": "تایید رزرو",
+    "schedule": "زمان‌بندی",
+    "price_breakdown": "جزئیات هزینه",
+    "total": "مجموع",
+    "confirm_pay": "تایید و پرداخت",
+    "success": "رزرو تایید شد!",
+    "message_caregiver": "پیام به مراقب",
+    "back_home": "بازگشت به خانه"
+  },
+  "dashboard": {
+    "title": "مراقبت {{name}} — امروز",
+    "medications": "داروها",
+    "meds_status": "{{completed}} / {{total}} انجام شد",
+    "caregiver": "مراقب",
+    "vitals": "علائم حیاتی",
+    "next_appointment": "نوبت بعدی",
+    "alerts": "هشدارها",
+    "no_alerts": "هشداری برای امروز نیست. همه چیز خوب به نظر می‌رسد.",
+    "family_circle": "حلقه خانواده"
+  },
+  "settings": {
+    "title": "تنظیمات",
+    "language": "زبان",
+    "notifications": "اعلان‌ها",
+    "payment": "روش‌های پرداخت",
+    "subscription": "CareMate Plus",
+    "logout": "خروج"
+  }
+}
