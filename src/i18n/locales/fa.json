@@ -131,7 +131,19 @@
     "next_appointment": "نوبت بعدی",
     "alerts": "هشدارها",
     "no_alerts": "هشداری برای امروز نیست. همه چیز خوب به نظر می‌رسد.",
-    "family_circle": "حلقه خانواده"
+    "family_circle": "حلقه خانواده",
+    "overview_tab": "بررسی اجمالی",
+    "payments_tab": "پرداخت‌ها",
+    "billing_history": "تاریخچه صورت‌حساب",
+    "payment_methods": "روش‌های پرداخت",
+    "add_payment_method": "افزودن روش پرداخت",
+    "card_ending_in": "کارت منتهی به {{last4}}",
+    "paid": "پرداخت شده",
+    "pending": "در انتظار",
+    "add_card": "افزودن کارت",
+    "card_number": "شماره کارت",
+    "expiry": "ماه/سال",
+    "cvv": "CVV"
   },
   "settings": {
     "title": "تنظیمات",

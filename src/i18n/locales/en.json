@@ -131,7 +131,19 @@
     "next_appointment": "Next Appointment",
     "alerts": "Alerts",
     "no_alerts": "No alerts today. Everything looks good.",
-    "family_circle": "Family Circle"
+    "family_circle": "Family Circle",
+    "overview_tab": "Overview",
+    "payments_tab": "Payments",
+    "billing_history": "Billing History",
+    "payment_methods": "Payment Methods",
+    "add_payment_method": "Add Payment Method",
+    "card_ending_in": "Card ending in {{last4}}",
+    "paid": "Paid",
+    "pending": "Pending",
+    "add_card": "Add Card",
+    "card_number": "Card Number",
+    "expiry": "MM/YY",
+    "cvv": "CVV"
   },
   "settings": {
     "title": "Settings",

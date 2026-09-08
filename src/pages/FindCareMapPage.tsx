@@ -54,6 +54,21 @@ function MapUpdater({ selectedLat, selectedLng }: { selectedLat?: number; select
   useEffect(() => {
     if (map && selectedLat && selectedLng) {
       map.panTo({ lat: selectedLat, lng: selectedLng });
+      
+      const targetZoom = 15;
+      let currentZoom = map.getZoom() || 13;
+      
+      if (currentZoom < targetZoom) {
+        const interval = setInterval(() => {
+          currentZoom += 1;
+          map.setZoom(currentZoom);
+          if (currentZoom >= targetZoom) {
+            clearInterval(interval);
+          }
+        }, 200);
+      } else if (currentZoom > targetZoom) {
+         map.setZoom(targetZoom);
+      }
     }
   }, [map, selectedLat, selectedLng]);
   return null;

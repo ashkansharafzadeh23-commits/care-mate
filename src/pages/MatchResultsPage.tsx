@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ShieldCheck, Star, MapPin } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useAppContext } from '../context/AppContext';
 import { Provider } from '../types';
+import { ProviderProfileModal } from '../components/ProviderProfileModal';
 
 const MOCK_PROVIDERS: Provider[] = [
   {
@@ -55,6 +56,7 @@ export default function MatchResultsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { language } = useAppContext();
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-50 p-6 pt-safe">
@@ -119,7 +121,7 @@ export default function MatchResultsPage() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => {}}>
+                <Button variant="outline" className="flex-1" onClick={() => setSelectedProvider(provider)}>
                   {t('results.view_profile')}
                 </Button>
                 <Button className="flex-1" onClick={() => navigate(`/book/${provider.id}`)}>
@@ -130,6 +132,18 @@ export default function MatchResultsPage() {
           </div>
         ))}
       </div>
+      
+      <ProviderProfileModal 
+        isOpen={selectedProvider !== null} 
+        onClose={() => setSelectedProvider(null)} 
+        provider={selectedProvider}
+        onBook={() => {
+          if (selectedProvider) {
+            navigate(`/book/${selectedProvider.id}`);
+          }
+        }}
+        language={language}
+      />
     </div>
   );
 }

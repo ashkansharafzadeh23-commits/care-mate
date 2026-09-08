@@ -1,14 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
-import { CheckCircle2, AlertCircle, Heart, Pill, Calendar, Clock, Plus, Phone, Bell, X, PhoneCall } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Heart, Pill, Calendar, Clock, Plus, Phone, Bell, X, PhoneCall, CreditCard, FileText, ChevronRight, Sparkles, Download } from 'lucide-react';
 import { EmergencyFAB } from '../components/EmergencyFAB';
 import { motion, AnimatePresence } from 'motion/react';
+import { Button } from '../components/Button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { parent } = useAppContext();
   const [showPushNotification, setShowPushNotification] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'payments'>('overview');
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Billing & Booking History', 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    autoTable(doc, {
+      startY: 36,
+      head: [['Date', 'Provider', 'Amount', 'Status']],
+      body: [
+        ['Sep 05, 2026', 'Sarah Jenkins', '$150', 'Paid'],
+        ['Aug 28, 2026', 'Michael Chen', '$120', 'Paid']
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246] }
+    });
+    
+    doc.save('billing-history.pdf');
+  };
 
   useEffect(() => {
     // Simulate an automated push notification / system alert arriving shortly after dashboard loads
@@ -50,7 +77,7 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <header className="flex justify-between items-center mt-16 mb-6">
+      <header className="flex justify-between items-center mt-16 mb-4">
         <h1 className="text-2xl font-bold text-text-900 leading-tight">
           {t('dashboard.title', { name: parent?.name || 'Parent' })}
         </h1>
@@ -63,7 +90,29 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* High-Visibility Emergency Assist Button */}
+      {/* Tabs */}
+      <div className="flex bg-surface-100 p-1 rounded-2xl mb-6">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${
+            activeTab === 'overview' ? 'bg-white text-text-900 shadow-sm' : 'text-text-500 hover:text-text-700'
+          }`}
+        >
+          {t('dashboard.overview_tab')}
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${
+            activeTab === 'payments' ? 'bg-white text-text-900 shadow-sm' : 'text-text-500 hover:text-text-700'
+          }`}
+        >
+          {t('dashboard.payments_tab')}
+        </button>
+      </div>
+
+      {activeTab === 'overview' ? (
+        <>
+          {/* High-Visibility Emergency Assist Button */}
       <a 
         href="tel:911"
         className="bg-accent-500 hover:bg-accent-600 text-white rounded-3xl p-5 mb-6 flex items-center shadow-md transition-transform active:scale-[0.98]"
@@ -76,6 +125,20 @@ export default function DashboardPage() {
           <p className="text-white/80 text-sm mt-0.5">Call 911 or local emergency services immediately</p>
         </div>
       </a>
+
+      {/* AI Recommendation Widget */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-5 mb-6 flex flex-col shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <h3 className="font-bold text-indigo-900">Smart Scheduling</h3>
+        </div>
+        <p className="text-sm text-indigo-800 leading-relaxed mb-4">
+          Based on your history, <strong>Tuesday and Thursday mornings at 9:00 AM</strong> are your most frequent booking slots. Would you like to schedule your next session then?
+        </p>
+        <button className="bg-indigo-600 text-white rounded-xl py-2.5 px-4 font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm self-start">
+          Quick Schedule
+        </button>
+      </div>
 
       {/* Alerts - prominent but calm */}
       <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-6 flex items-start shadow-sm">
@@ -148,6 +211,71 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+        </>
+      ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-text-900">{t('dashboard.payment_methods')}</h2>
+          </div>
+          
+          <div className="bg-white border border-surface-200 rounded-3xl p-4 mb-6 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-8 bg-surface-100 rounded flex items-center justify-center border border-surface-200">
+                <CreditCard className="w-5 h-5 text-text-600" />
+              </div>
+              <div>
+                <p className="font-bold text-text-900 text-sm">{t('dashboard.card_ending_in', { last4: '4242' })}</p>
+                <p className="text-xs text-text-500">{t('dashboard.expiry')}: 12/26</p>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </div>
+
+          <Button variant="outline" className="w-full mb-8" onClick={() => {}}>
+            <Plus className="w-4 h-4 me-2" />
+            {t('dashboard.add_payment_method')}
+          </Button>
+
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-text-900">{t('dashboard.billing_history')}</h2>
+            <button 
+              onClick={handleExportPDF}
+              className="flex items-center gap-1 text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </button>
+          </div>
+          <div className="space-y-3">
+            {[
+              { id: 1, date: 'Sep 05, 2026', amount: 150, status: 'paid', provider: 'Sarah Jenkins' },
+              { id: 2, date: 'Aug 28, 2026', amount: 120, status: 'paid', provider: 'Michael Chen' },
+            ].map(bill => (
+              <div key={bill.id} className="bg-white border border-surface-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface-50 flex items-center justify-center border border-surface-100">
+                    <FileText className="w-4 h-4 text-text-500" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-text-900 text-sm">{bill.provider}</p>
+                    <p className="text-xs text-text-500">{bill.date}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end">
+                  <p className="font-bold text-text-900" dir="ltr">${bill.amount}</p>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 ${
+                    bill.status === 'paid' ? 'bg-primary-50 text-primary-700' : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {t(bill.status === 'paid' ? 'dashboard.paid' : 'dashboard.pending')}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
