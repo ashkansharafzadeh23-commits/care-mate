@@ -184,40 +184,42 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Clearly Separated Development Test Fixtures */}
-      <div className="mt-auto bg-primary-50/50 border border-primary-100 rounded-2xl p-4 text-center">
-        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-primary-800 uppercase tracking-wider mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{t('auth.demo_accounts_title')}</span>
+      {/* Clearly Separated Development Test Fixtures - Only rendered in Development mode */}
+      {import.meta.env.DEV && (
+        <div className="mt-auto bg-primary-50/50 border border-primary-100 rounded-2xl p-4 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-primary-800 uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{t('auth.demo_accounts_title')}</span>
+          </div>
+          <p className="text-xs text-text-500 mb-3">{t('auth.demo_notice')}</p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => handleDemoLogin(DEVELOPMENT_USERS[0].email)}
+              className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
+            >
+              {t('auth.demo_family')}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => handleDemoLogin(DEVELOPMENT_USERS[1].email)}
+              className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
+            >
+              {t('auth.demo_provider')}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => handleDemoLogin(DEVELOPMENT_USERS[2].email)}
+              className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
+            >
+              {t('auth.demo_admin')}
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-text-500 mb-3">{t('auth.demo_notice')}</p>
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => handleDemoLogin(DEVELOPMENT_USERS[0].email)}
-            className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
-          >
-            {t('auth.demo_family')}
-          </button>
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => handleDemoLogin(DEVELOPMENT_USERS[1].email)}
-            className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
-          >
-            {t('auth.demo_provider')}
-          </button>
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => handleDemoLogin(DEVELOPMENT_USERS[2].email)}
-            className="py-2 px-2 text-xs font-semibold bg-white rounded-xl border border-primary-200 text-primary-700 hover:bg-primary-50 transition-colors shadow-2xs"
-          >
-            {t('auth.demo_admin')}
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
