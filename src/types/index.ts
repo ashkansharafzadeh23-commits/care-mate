@@ -1,17 +1,51 @@
 export type Language = 'en' | 'fa';
 
 // ==========================================
-// IDENTITY & FAMILY
+// IDENTITY & ROLES
 // ==========================================
-export type FamilyRole = 'primary_coordinator' | 'care_collaborator' | 'family_viewer' | 'emergency_contact';
+export type UserRole = 'family' | 'provider' | 'admin';
+
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+
+export interface AuthSession {
+  userId: string;
+  role: UserRole;
+  expiresAt?: string;
+}
 
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  name: string; // Combined convenience property for UI: `${firstName} ${lastName}`
   email: string;
   phone?: string;
+  role: UserRole;
+  preferredLanguage: Language;
+  createdAt: string;
   activeFamilyCircleId?: string;
 }
+
+/**
+ * Provider Professional Profile (Separated from User identity)
+ * Domain-specific data for marketplace providers.
+ */
+export interface ProviderProfile {
+  id: string;
+  userId: string;
+  title: string;
+  hourlyRate?: number;
+  yearsExperience?: number;
+  specialties: string[];
+  bio?: string;
+  status: 'draft' | 'under_review' | 'active' | 'suspended';
+  trustRecord?: TrustRecord;
+}
+
+// ==========================================
+// FAMILY & CARE CIRCLE
+// ==========================================
+export type FamilyRole = 'primary_coordinator' | 'care_collaborator' | 'family_viewer' | 'emergency_contact';
 
 export interface FamilyMember {
   id: string;

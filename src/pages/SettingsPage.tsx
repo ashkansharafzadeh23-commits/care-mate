@@ -1,14 +1,19 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
-import { Globe, Bell, CreditCard, LogOut, Users, Sparkles, User as UserIcon } from 'lucide-react';
+import { useAuthContext } from '../context/AuthContext';
+import { Globe, Bell, CreditCard, LogOut, Users, Sparkles, User as UserIcon, Shield } from 'lucide-react';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { language, setLanguage, user } = useAppContext();
+  const navigate = useNavigate();
+  const { language, setLanguage } = useAppContext();
+  const { user, logout } = useAuthContext();
 
-  const handleLanguageToggle = () => {
-    setLanguage(language === 'en' ? 'fa' : 'en');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -18,12 +23,19 @@ export default function SettingsPage() {
       </header>
 
       <div className="flex items-center p-4 bg-white rounded-3xl border border-surface-200 shadow-sm mb-8">
-        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 me-4 text-xl font-bold">
-          {user?.name.charAt(0) || 'U'}
+        <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 me-4 text-xl font-bold shrink-0">
+          {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-text-900">{user?.name}</h2>
-          <p className="text-text-500">{user?.email}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h2 className="text-xl font-bold text-text-900 truncate">{user?.name}</h2>
+            {user?.role && (
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full shrink-0">
+                {user.role}
+              </span>
+            )}
+          </div>
+          <p className="text-text-500 text-sm truncate">{user?.email}</p>
         </div>
       </div>
 
@@ -76,7 +88,10 @@ export default function SettingsPage() {
           })}
         </div>
 
-        <button className="w-full bg-white rounded-3xl border border-surface-200 p-4 flex items-center text-accent-500 hover:bg-accent-50 transition-colors shadow-sm">
+        <button 
+          onClick={handleLogout}
+          className="w-full bg-white rounded-3xl border border-surface-200 p-4 flex items-center text-accent-500 hover:bg-accent-50 transition-colors shadow-sm"
+        >
           <div className="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center me-4">
             <LogOut className="w-5 h-5" />
           </div>

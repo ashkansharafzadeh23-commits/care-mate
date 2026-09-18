@@ -2,12 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Language, User, Parent, CareRecipient, FamilyMember, CareAlert } from '../types';
 import { careRecipientService } from '../services/careRecipientService';
+import { useAuthContext } from './AuthContext';
 
 interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  // Authenticated user identity from AuthContext
   user: User | null;
-  setUser: (user: User | null) => void;
   // Backward-compatible single parent accessor
   parent: Parent | null;
   setParent: (parent: Parent | null) => void;
@@ -15,6 +16,7 @@ interface AppContextType {
   careRecipients: CareRecipient[];
   activeCareRecipient: CareRecipient | null;
   setActiveRecipientId: (id: string) => void;
+  addCareRecipient: (newRecipient: Omit<CareRecipient, 'id'>) => CareRecipient;
   familyMembers: FamilyMember[];
   alerts: CareAlert[];
   isRTL: boolean;
@@ -24,20 +26,32 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { i18n } = useTranslation();
-  const [language, setLanguageState] = useState<Language>('en');
+  const { user } = useAuthContext();
+  const [language, setLanguageState] = useState<Language>(() => user?.preferredLanguage || 'en');
   
-  const [user, setUser] = useState<User | null>({
-    id: 'u1',
-    name: 'Sarah',
-    email: 'sarah@example.com',
-    phone: '+1 (555) 234-5678',
-    activeFamilyCircleId: 'fc_1'
-  });
-  
-  const [careRecipients, setCareRecipients] = useState<CareRecipient[]>(() => careRecipientService.getRecipients());
+  const [careRecipients, setCareRecipients] = useState<CareRecipient[]>(() => 
+    careRecipientService.getRecipients(user?.id)
+  );
   const [activeRecipientId, setActiveRecipientIdState] = useState<string>('p1');
-  const [familyMembers] = useState<FamilyMember[]>(() => careRecipientService.getFamilyMembers());
-  const [alerts] = useState<CareAlert[]>(() => careRecipientService.getAlerts());
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => 
+    careRecipientService.getFamilyMembers()
+  );
+  const [alerts, setAlerts] = useState<CareAlert[]>(() => 
+    careRecipientService.getAlerts()
+  );
+
+  // Sync care recipients when authenticated user changes
+  useEffect(() => {
+    const list = careRecipientService.getRecipients(user?.id);
+    setCareRecipients(list);
+    if (list.length > 0) {
+      setActiveRecipientIdState(list[0].id);
+      careRecipientService.setActiveRecipientId(list[0].id);
+    }
+    if (user?.preferredLanguage) {
+      setLanguageState(user.preferredLanguage);
+    }
+  }, [user?.id, user?.preferredLanguage]);
 
   const activeCareRecipient = careRecipients.find(r => r.id === activeRecipientId) || careRecipients[0] || null;
 
@@ -51,6 +65,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setActiveRecipientId = (id: string) => {
     setActiveRecipientIdState(id);
     careRecipientService.setActiveRecipientId(id);
+  };
+
+  const addCareRecipient = (newRecipient: Omit<CareRecipient, 'id'>): CareRecipient => {
+    const created = careRecipientService.addRecipient(newRecipient, user?.id);
+    setCareRecipients(careRecipientService.getRecipients(user?.id));
+    setActiveRecipientIdState(created.id);
+    return created;
   };
 
   const isRTL = language === 'fa';
@@ -71,12 +92,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         language, 
         setLanguage, 
         user, 
-        setUser, 
         parent, 
         setParent, 
         careRecipients,
         activeCareRecipient,
         setActiveRecipientId,
+        addCareRecipient,
         familyMembers,
         alerts,
         isRTL 
@@ -94,3 +115,4 @@ export const useAppContext = () => {
   }
   return context;
 };
+

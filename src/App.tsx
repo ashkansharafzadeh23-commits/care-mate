@@ -1,11 +1,21 @@
 import React from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAppContext } from './context/AppContext';
+import { useAuthContext } from './context/AuthContext';
 import { Home, HeartPulse, MessageSquare, Settings } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTranslation } from 'react-i18next';
 
-// Lazy loading or direct imports (we'll just use direct for MVP simplicity)
+// Auth Pages & Route Protection
+import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import ProviderDashboardPage from './pages/ProviderDashboardPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+
+// Family & Application Pages
 import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -21,6 +31,7 @@ function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { user, isAuthenticated } = useAuthContext();
 
   const navItems = [
     { path: '/home', icon: Home, label: t('nav.home') },
@@ -29,8 +40,27 @@ function BottomNav() {
     { path: '/settings', icon: Settings, label: t('nav.settings') },
   ];
 
-  // Don't show nav on onboarding, chat, or booking flows for focus
-  const hideNavPaths = ['/', '/onboarding', '/chat', '/results', '/book', '/provider-signup'];
+  // Only display family navigation bar when user is authenticated as family and not in flow pages
+  if (!isAuthenticated || user?.role !== 'family') {
+    return null;
+  }
+
+  const hideNavPaths = [
+    '/',
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/unauthorized',
+    '/onboarding',
+    '/chat',
+    '/results',
+    '/book',
+    '/provider-signup',
+    '/provider-onboarding',
+    '/provider-dashboard',
+    '/admin'
+  ];
+
   if (hideNavPaths.some(p => location.pathname === p || location.pathname.startsWith('/book/'))) {
     return null;
   }
@@ -66,16 +96,112 @@ export default function App() {
       <div className="w-full max-w-md bg-white min-h-screen relative shadow-sm overflow-x-hidden">
         <main className="pb-20 min-h-screen">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/provider-signup" element={<ProviderOnboardingPage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/find-care" element={<FindCareMapPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/results" element={<MatchResultsPage />} />
-            <Route path="/book/:id" element={<BookingPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="/provider-signup" element={<Navigate to="/signup?role=provider" replace />} />
+
+            {/* Family Protected Routes */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/find-care"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <FindCareMapPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/results"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <MatchResultsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book/:id"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <BookingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Provider Protected Routes */}
+            <Route
+              path="/provider-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['provider']}>
+                  <ProviderDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/provider-onboarding"
+              element={
+                <ProtectedRoute allowedRoles={['provider']}>
+                  <ProviderOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Protected Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Authenticated Global Routes (all roles) */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <BottomNav />

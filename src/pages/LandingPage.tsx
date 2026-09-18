@@ -1,15 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { ShieldCheck, Sparkles, Users, ArrowRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useAppContext } from '../context/AppContext';
+import { useAuthContext } from '../context/AuthContext';
+import { getRoleDefaultRoute } from '../services/auth/authUtils';
 import heroImage from '../assets/images/caremate_hero_1788327490038.jpg';
 
 export default function LandingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { language, setLanguage } = useAppContext();
+  const { user, isAuthenticated } = useAuthContext();
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-50 relative">
@@ -77,16 +80,38 @@ export default function LandingPage() {
 
         {/* CTA */}
         <div className="mt-auto pb-safe flex flex-col space-y-3">
-          <Button className="w-full" size="lg" onClick={() => navigate('/onboarding')}>
-            {t('landing.get_started')}
-          </Button>
-          <Button variant="ghost" className="w-full" onClick={() => navigate('/home')}>
-            {t('landing.login')}
-          </Button>
-          <div className="w-full h-px bg-surface-200 my-2"></div>
-          <Button variant="outline" className="w-full text-text-600" onClick={() => navigate('/provider-signup')}>
-            {t('landing.register_caregiver')}
-          </Button>
+          {isAuthenticated && user ? (
+            <>
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={() => navigate(getRoleDefaultRoute(user.role))}
+              >
+                Continue as {user.firstName}
+                <ArrowRight className="w-4 h-4 ms-2" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full text-text-500" 
+                onClick={() => navigate('/login')}
+              >
+                Switch Account
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button className="w-full" size="lg" onClick={() => navigate('/signup')}>
+                {t('landing.get_started')}
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => navigate('/login')}>
+                {t('landing.login')}
+              </Button>
+              <div className="w-full h-px bg-surface-200 my-2"></div>
+              <Button variant="outline" className="w-full text-text-600" onClick={() => navigate('/signup?role=provider')}>
+                {t('landing.register_caregiver')}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
