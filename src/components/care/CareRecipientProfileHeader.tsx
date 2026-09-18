@@ -10,6 +10,8 @@ interface CareRecipientProfileHeaderProps {
   onTellNeeds: () => void;
   onAddRecipient: () => void;
   onRemove: () => void;
+  canEdit?: boolean;
+  canRemove?: boolean;
 }
 
 export const CareRecipientProfileHeader: React.FC<CareRecipientProfileHeaderProps> = ({
@@ -17,7 +19,9 @@ export const CareRecipientProfileHeader: React.FC<CareRecipientProfileHeaderProp
   onEdit,
   onTellNeeds,
   onAddRecipient,
-  onRemove
+  onRemove,
+  canEdit = true,
+  canRemove = true
 }) => {
   const { t } = useTranslation();
   const displayName = recipient.preferredName || recipient.firstName || recipient.name || 'Loved One';
@@ -72,15 +76,21 @@ export const CareRecipientProfileHeader: React.FC<CareRecipientProfileHeaderProp
 
         {/* Quick action buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:self-start">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onEdit}
-            className="flex items-center gap-1.5 text-xs font-semibold"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>{t('care_profile.edit_profile')}</span>
-          </Button>
+          {canEdit ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>{t('care_profile.edit_profile')}</span>
+            </Button>
+          ) : (
+            <span className="text-[11px] text-text-400 bg-surface-100 px-2.5 py-1 rounded-xl border border-surface-200">
+              {t('family_circle.view_only_access', 'View-Only Access')}
+            </span>
+          )}
           <Button
             variant="primary"
             size="sm"
@@ -104,14 +114,16 @@ export const CareRecipientProfileHeader: React.FC<CareRecipientProfileHeaderProp
           <span>{t('care_switcher.add_care_recipient')}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-text-400 hover:text-red-600 font-medium flex items-center gap-1.5 transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>{t('care_profile.remove_profile_btn')}</span>
-        </button>
+        {canRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-text-400 hover:text-red-600 font-medium flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{t('care_profile.remove_profile_btn')}</span>
+          </button>
+        )}
       </div>
     </div>
   );

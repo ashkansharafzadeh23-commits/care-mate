@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useTranslation } from 'react-i18next';
 import { Language, User, Parent, CareRecipient, FamilyMember, CareAlert } from '../types';
 import { careRecipientService } from '../services/careRecipientService';
+import { familyCircleService } from '../services/familyCircleService';
 import { useAuthContext } from './AuthContext';
 
 interface AppContextType {
@@ -19,8 +20,9 @@ interface AppContextType {
   updateCareRecipient: (id: string, updates: Partial<CareRecipient>) => CareRecipient | null;
   removeCareRecipient: (id: string) => boolean;
   refreshCareRecipients: () => void;
-  // Backward-compatible single parent accessors
-  // TODO: Legacy backward compatibility accessors, will be phased out in future iterations.
+  refreshFamilyMembers: () => void;
+  getFamilyMembersForRecipient: (recipientId: string) => FamilyMember[];
+  // Backward-compatible accessors
   parent: Parent | null;
   setParent: (parent: Parent | null) => void;
   addCareRecipient: (newRecipient: any) => CareRecipient;
@@ -45,9 +47,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return active ? active.id : null;
   });
 
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => 
-    careRecipientService.getFamilyMembers()
-  );
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => {
+    const active = user?.id ? careRecipientService.getActiveRecipient(user.id) : null;
+    return active ? familyCircleService.listMembers(active.id) : [];
+  });
+
   const [alerts, setAlerts] = useState<CareAlert[]>(() => 
     careRecipientService.getAlerts()
   );
@@ -56,13 +60,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user?.id) {
       setCareRecipients([]);
       setActiveRecipientIdState(null);
+      setFamilyMembers([]);
       return;
     }
     const list = careRecipientService.listRecipientsForFamily(user.id);
     setCareRecipients(list);
     const active = careRecipientService.getActiveRecipient(user.id);
-    setActiveRecipientIdState(active ? active.id : null);
+    const activeId = active ? active.id : null;
+    setActiveRecipientIdState(activeId);
+    if (activeId) {
+      setFamilyMembers(familyCircleService.listMembers(activeId));
+    } else {
+      setFamilyMembers([]);
+    }
   }, [user?.id]);
+
+  const refreshFamilyMembers = useCallback(() => {
+    if (activeRecipientId) {
+      setFamilyMembers(familyCircleService.listMembers(activeRecipientId));
+    } else {
+      setFamilyMembers([]);
+    }
+  }, [activeRecipientId]);
+
+  const getFamilyMembersForRecipient = useCallback((recipientId: string): FamilyMember[] => {
+    return familyCircleService.listMembers(recipientId);
+  }, []);
 
   // Sync care recipients when authenticated user changes
   useEffect(() => {
@@ -71,6 +94,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLanguageState(user.preferredLanguage);
     }
   }, [user?.id, user?.preferredLanguage, refreshCareRecipients]);
+
+  // Sync family members when active recipient changes
+  useEffect(() => {
+    if (activeRecipientId) {
+      setFamilyMembers(familyCircleService.listMembers(activeRecipientId));
+    } else {
+      setFamilyMembers([]);
+    }
+  }, [activeRecipientId]);
 
   const activeCareRecipient: CareRecipient | null = 
     (activeRecipientId ? careRecipients.find(r => r.id === activeRecipientId) : null) || 
@@ -90,32 +122,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  /**
+   * STRENGTHENED MUTATION PATTERNS (Item 10 & 54):
+   * Authentication is strictly required for mutating Care Recipient records.
+   * Never fallback to development fixture accounts without explicit authentication.
+   */
   const createCareRecipient = (data: Omit<CareRecipient, 'id' | 'createdAt' | 'updatedAt'>): CareRecipient => {
-    const targetUserId = user?.id || 'u_family_sample';
-    const created = careRecipientService.createRecipient(data, targetUserId);
+    if (!user?.id) {
+      throw new Error('Authentication required: A Care Recipient must belong to an authenticated user.');
+    }
+    const created = careRecipientService.createRecipient(data, user.id, user.name);
     refreshCareRecipients();
     setActiveRecipientIdState(created.id);
     return created;
   };
 
   const updateCareRecipient = (id: string, updates: Partial<CareRecipient>): CareRecipient | null => {
-    const targetUserId = user?.id || 'u_family_sample';
-    const updated = careRecipientService.updateRecipient(id, updates, targetUserId);
+    if (!user?.id) {
+      throw new Error('Authentication required: Cannot update care recipient without an authenticated user.');
+    }
+    const updated = careRecipientService.updateRecipient(id, updates, user.id);
     refreshCareRecipients();
     return updated;
   };
 
   const removeCareRecipient = (id: string): boolean => {
-    const targetUserId = user?.id || 'u_family_sample';
-    const removed = careRecipientService.deleteRecipient(id, targetUserId);
+    if (!user?.id) {
+      throw new Error('Authentication required: Cannot remove care recipient without an authenticated user.');
+    }
+    const removed = careRecipientService.deleteRecipient(id, user.id);
     refreshCareRecipients();
     return removed;
   };
 
   // Backward compatibility alias for addCareRecipient
   const addCareRecipient = (newRecipient: any): CareRecipient => {
-    const targetUserId = user?.id || 'u_family_sample';
-    const created = careRecipientService.addRecipient(newRecipient, targetUserId);
+    if (!user?.id) {
+      throw new Error('Authentication required: Cannot add care recipient without an authenticated user.');
+    }
+    const created = careRecipientService.addRecipient(newRecipient, user.id);
     refreshCareRecipients();
     setActiveRecipientIdState(created.id);
     return created;
@@ -150,6 +195,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCareRecipient,
         removeCareRecipient,
         refreshCareRecipients,
+        refreshFamilyMembers,
+        getFamilyMembersForRecipient,
         addCareRecipient,
         familyMembers,
         alerts,

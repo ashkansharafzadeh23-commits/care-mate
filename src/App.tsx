@@ -27,6 +27,8 @@ import DashboardPage from './pages/DashboardPage';
 import SettingsPage from './pages/SettingsPage';
 import FindCareMapPage from './pages/FindCareMapPage';
 import ProviderOnboardingPage from './pages/ProviderOnboardingPage';
+import { FamilyCirclePage } from './pages/FamilyCirclePage';
+import { InvitationAcceptancePage } from './pages/InvitationAcceptancePage';
 
 function BottomNav() {
   const navigate = useNavigate();
@@ -103,6 +105,7 @@ export default function App() {
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="/invite/:token" element={<InvitationAcceptancePage />} />
             <Route path="/provider-signup" element={<Navigate to="/signup?role=provider" replace />} />
 
             {/* Family Protected Routes */}
@@ -119,6 +122,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['family']}>
                   <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/care/:recipientId/family"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <FamilyCirclePage />
                 </ProtectedRoute>
               }
             />

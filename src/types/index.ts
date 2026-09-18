@@ -43,20 +43,112 @@ export interface ProviderProfile {
 }
 
 // ==========================================
-// FAMILY & CARE CIRCLE
+// FAMILY CIRCLE, ROLES & PERMISSIONS
 // ==========================================
-export type FamilyRole = 'primary_coordinator' | 'care_collaborator' | 'family_viewer' | 'emergency_contact';
+export type FamilyRole = 
+  | 'care_coordinator' 
+  | 'family_member' 
+  | 'view_only'
+  | 'trusted_helper'
+  | 'healthcare_proxy'
+  | 'viewer'
+  | 'CARE_COORDINATOR'
+  | 'FAMILY_MEMBER'
+  | 'TRUSTED_HELPER'
+  | 'HEALTHCARE_PROXY'
+  | 'VIEW_ONLY'
+  // Legacy aliases preserved for backward compatibility
+  | 'primary_coordinator' 
+  | 'care_collaborator' 
+  | 'family_viewer';
+
+export type InvitationStatus = 
+  | 'invited' 
+  | 'accepted' 
+  | 'declined' 
+  | 'expired' 
+  | 'revoked'
+  | 'pending';
+
+export type CarePermission =
+  | 'view_care'
+  | 'edit_care_profile'
+  | 'create_care_request'
+  | 'book_care'
+  | 'manage_bookings'
+  | 'message_providers'
+  | 'view_visit_reports'
+  | 'view_care_timeline'
+  | 'manage_care_profile'
+  | 'view_sensitive_information'
+  | 'manage_payments'
+  | 'invite_family'
+  | 'manage_permissions'
+  | 'report_incident';
+
+export interface FamilyCircle {
+  id: string;
+  careRecipientId: string;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface FamilyMember {
   id: string;
+  familyCircleId: string;
+  careRecipientId: string;
+  recipientId?: string;
   userId?: string;
   name: string;
   email?: string;
   phone?: string;
   relationshipToRecipient: string;
   role: FamilyRole;
+  permissions: CarePermission[];
+  invitationStatus: InvitationStatus;
+  invitationToken?: string;
+  invitedByUserId?: string;
+  invitedAt?: string;
+  acceptedAt?: string;
   avatarUrl?: string;
-  isEmergencyContact: boolean;
+  createdAt: string;
+  updatedAt: string;
+  isEmergencyContact?: boolean;
+}
+
+export type FamilyActivityType =
+  | 'FAMILY_MEMBER_INVITED'
+  | 'FAMILY_MEMBER_JOINED'
+  | 'FAMILY_MEMBER_REMOVED'
+  | 'MEMBER_ROLE_CHANGED'
+  | 'MEMBER_PERMISSIONS_CHANGED'
+  | 'FAMILY_CIRCLE_CREATED';
+
+export interface FamilyActivity {
+  id: string;
+  careRecipientId: string;
+  actorUserId: string;
+  actorName?: string;
+  type: FamilyActivityType;
+  timestamp: string;
+  createdAt?: string;
+  description?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface InvitationTokenPayload {
+  token: string;
+  memberId: string;
+  careRecipientId: string;
+  recipientId?: string;
+  recipientName: string;
+  inviterName: string;
+  relationshipToRecipient: string;
+  role: FamilyRole;
+  email?: string;
+  phone?: string;
+  expiresAt: string;
 }
 
 // ==========================================

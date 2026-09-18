@@ -7,9 +7,10 @@ import {
   CareNeedCategory, 
   MobilityOption, 
   CarePreferences, 
-  CommunicationPreferences,
+  CommunicationPreferences, 
   CareRecipientLocation 
 } from '../types';
+import { familyCircleService } from './familyCircleService';
 
 /**
  * Care Recipient Service
@@ -17,9 +18,9 @@ import {
  * 
  * ARCHITECTURAL PRINCIPLES:
  * - Rule 18: Evelyn and Robert are clearly isolated development fixtures for 'u_family_sample'.
- * - Rule 22: Supports multiple Care Recipients per family.
+ * - Rule 22: Supports multiple Care Recipients per family with isolated Family Circles.
  * - Rule 24: Care Recipient is the central domain entity.
- * - Rule 10: Care Recipient privacy (no sensitive data leaks, soft delete support).
+ * - Rule 10 & 11: Scoped lookup (no cross-user leakage, authenticated mutations required).
  */
 
 export function calculateAge(dobString?: string): number | undefined {
@@ -87,7 +88,6 @@ export const MOCK_DEVELOPMENT_RECIPIENTS: CareRecipient[] = [
     importantNotes: 'Mild arthritis in morning, prefers morning appointments, fluent in English.',
     createdAt: '2026-01-15T08:00:00Z',
     updatedAt: '2026-09-01T12:00:00Z',
-    // Backward compatibility
     name: 'Evelyn',
     notes: 'Mild arthritis in morning, prefers morning appointments, fluent in English.',
     address: {
@@ -140,7 +140,6 @@ export const MOCK_DEVELOPMENT_RECIPIENTS: CareRecipient[] = [
     importantNotes: 'Recovering from minor knee surgery.',
     createdAt: '2026-02-10T10:00:00Z',
     updatedAt: '2026-08-20T14:30:00Z',
-    // Backward compatibility
     name: 'Robert',
     notes: 'Recovering from minor knee surgery.',
     address: {
@@ -152,30 +151,7 @@ export const MOCK_DEVELOPMENT_RECIPIENTS: CareRecipient[] = [
   }
 ];
 
-// Backwards compatibility export
 export const INITIAL_RECIPIENTS = MOCK_DEVELOPMENT_RECIPIENTS;
-
-export const INITIAL_FAMILY_MEMBERS: FamilyMember[] = [
-  {
-    id: 'fam_1',
-    userId: 'u_family_sample',
-    name: 'Sarah',
-    relationshipToRecipient: 'Daughter',
-    role: 'primary_coordinator',
-    email: 'sarah.family@example.com',
-    phone: '+1 (555) 234-5678',
-    isEmergencyContact: true
-  },
-  {
-    id: 'fam_2',
-    name: 'David',
-    relationshipToRecipient: 'Son',
-    role: 'care_collaborator',
-    email: 'david.fam@example.com',
-    phone: '+1 (555) 987-6543',
-    isEmergencyContact: true
-  }
-];
 
 export const INITIAL_ALERTS: CareAlert[] = [
   {
@@ -196,7 +172,6 @@ const STORAGE_KEY_ACTIVE = 'caremate_active_recipient_id';
 class CareRecipientService {
   private userRecipientsMap: Map<string, CareRecipient[]> = new Map();
   private activeRecipientIdMap: Map<string, string> = new Map();
-  private familyMembers: FamilyMember[] = [...INITIAL_FAMILY_MEMBERS];
   private alerts: CareAlert[] = [...INITIAL_ALERTS];
 
   constructor() {
@@ -236,38 +211,9 @@ class CareRecipientService {
   }
 
   /**
-   * List all Care Recipients belonging to an authenticated Family user.
-   * A newly registered user returns [] until they create a recipient.
+   * Internal helper to find a recipient by ID across stores (used for shared memberships)
    */
-  public listRecipientsForFamily(userId?: string): CareRecipient[] {
-    if (!userId) {
-      return [];
-    }
-    const list = this.userRecipientsMap.get(userId);
-    return list ? [...list] : [];
-  }
-
-  /**
-   * Legacy backward-compatibility alias for listRecipientsForFamily.
-   * If userId is omitted in test environments, falls back to demo sample.
-   */
-  public getRecipients(userId?: string): CareRecipient[] {
-    if (!userId) {
-      const sample = this.userRecipientsMap.get('u_family_sample');
-      return sample ? [...sample] : [...MOCK_DEVELOPMENT_RECIPIENTS];
-    }
-    return this.listRecipientsForFamily(userId);
-  }
-
-  /**
-   * Get single recipient by ID.
-   */
-  public getRecipient(id: string, userId?: string): CareRecipient | null {
-    if (userId) {
-      const userList = this.listRecipientsForFamily(userId);
-      return userList.find(r => r.id === id) || null;
-    }
-    // Search across all users if userId not specified
+  public findRecipientByIdInternal(id: string): CareRecipient | null {
     for (const list of this.userRecipientsMap.values()) {
       const found = list.find(r => r.id === id);
       if (found) return found;
@@ -276,18 +222,74 @@ class CareRecipientService {
   }
 
   /**
+   * List all Care Recipients accessible by an authenticated user.
+   * Includes:
+   * 1. Care Recipients created by this user
+   * 2. Care Recipients where this user is an accepted member of the Family Circle
+   */
+  public listRecipientsForFamily(userId?: string): CareRecipient[] {
+    if (!userId) {
+      return [];
+    }
+    const createdList = this.userRecipientsMap.get(userId) || [];
+    const memberRecipientIds = familyCircleService.getRecipientIdsForUser(userId);
+
+    const combined: CareRecipient[] = [...createdList];
+    for (const recId of memberRecipientIds) {
+      if (!combined.some(r => r.id === recId)) {
+        const shared = this.findRecipientByIdInternal(recId);
+        if (shared) {
+          combined.push(shared);
+        }
+      }
+    }
+    return combined;
+  }
+
+  /**
+   * Legacy alias for listRecipientsForFamily.
+   * If userId is omitted, returns empty array in production-safe architecture.
+   */
+  public getRecipients(userId?: string): CareRecipient[] {
+    if (!userId) {
+      return [];
+    }
+    return this.listRecipientsForFamily(userId);
+  }
+
+  /**
+   * Get single recipient by ID.
+   * STRENGTHENED AUTHORIZATION (Item 11):
+   * Scoped strictly to the authenticated user's authorized recipients.
+   * Unauthenticated or out-of-scope access returns null.
+   */
+  public getRecipient(id: string, userId?: string): CareRecipient | null {
+    if (!userId) {
+      return null;
+    }
+    const authorizedList = this.listRecipientsForFamily(userId);
+    return authorizedList.find(r => r.id === id) || null;
+  }
+
+  /**
+   * Explicit development demo helper for testing fixtures.
+   */
+  public getRecipientForDevelopmentDemo(id: string): CareRecipient | null {
+    return this.findRecipientByIdInternal(id);
+  }
+
+  /**
    * Get the active recipient for the given family user.
-   * Does NOT force 'p1' if none exists.
    */
   public getActiveRecipient(userId?: string): CareRecipient | null {
-    const list = this.getRecipients(userId);
+    if (!userId) return null;
+    const list = this.listRecipientsForFamily(userId);
     if (list.length === 0) return null;
 
-    const userKey = userId || 'u_family_sample';
-    let savedId = this.activeRecipientIdMap.get(userKey);
+    let savedId = this.activeRecipientIdMap.get(userId);
     if (!savedId) {
       try {
-        savedId = localStorage.getItem(`${STORAGE_KEY_ACTIVE}_${userKey}`) || undefined;
+        savedId = localStorage.getItem(`${STORAGE_KEY_ACTIVE}_${userId}`) || undefined;
       } catch {
         // Fallback
       }
@@ -305,10 +307,10 @@ class CareRecipientService {
    * Set active recipient ID for a user.
    */
   public setActiveRecipientId(id: string, userId?: string): void {
-    const userKey = userId || 'u_family_sample';
-    this.activeRecipientIdMap.set(userKey, id);
+    if (!userId) return;
+    this.activeRecipientIdMap.set(userId, id);
     try {
-      localStorage.setItem(`${STORAGE_KEY_ACTIVE}_${userKey}`, id);
+      localStorage.setItem(`${STORAGE_KEY_ACTIVE}_${userId}`, id);
     } catch {
       // Ignore
     }
@@ -316,23 +318,30 @@ class CareRecipientService {
 
   /**
    * Create a new Care Recipient profile.
+   * AUTOMATICALLY CREATES FAMILY CIRCLE (Item 12):
+   * The authenticated creator is designated as the primary Care Coordinator.
    */
   public createRecipient(
     data: Omit<CareRecipient, 'id' | 'createdAt' | 'updatedAt'>,
-    userId: string
+    userId: string,
+    creatorName?: string
   ): CareRecipient {
+    if (!userId) {
+      throw new Error('Authentication required: A Care Recipient must belong to an authenticated user.');
+    }
+
     const now = new Date().toISOString();
     const effectiveAge = data.age || calculateAge(data.dateOfBirth) || 0;
     const displayName = data.preferredName || `${data.firstName} ${data.lastName}`.trim();
+    const recipientId = `cr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     const newRecipient: CareRecipient = {
       ...data,
-      id: `cr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: recipientId,
       createdByUserId: userId,
       age: effectiveAge,
       createdAt: now,
       updatedAt: now,
-      // Backward compatibility fields
       name: displayName,
       notes: data.importantNotes,
       photoUrl: data.profilePhotoUrl,
@@ -343,10 +352,17 @@ class CareRecipientService {
       }
     };
 
-    const currentList = this.listRecipientsForFamily(userId);
+    const currentList = this.userRecipientsMap.get(userId) || [];
     currentList.push(newRecipient);
     this.userRecipientsMap.set(userId, currentList);
     this.saveToStorage();
+
+    // Automatically establish the Family Circle for this Care Recipient
+    familyCircleService.createCircle(
+      recipientId, 
+      userId, 
+      creatorName || `${newRecipient.firstName}'s Coordinator`
+    );
 
     this.setActiveRecipientId(newRecipient.id, userId);
 
@@ -360,14 +376,15 @@ class CareRecipientService {
     newRecipient: Partial<CareRecipient> & { firstName?: string; lastName?: string; name?: string },
     userId?: string
   ): CareRecipient {
-    const targetUserId = userId || 'u_family_sample';
-    
-    // Normalize if only legacy fields provided
+    if (!userId) {
+      throw new Error('Authentication required to create a Care Recipient.');
+    }
+
     const firstName = newRecipient.firstName || (newRecipient.name ? newRecipient.name.split(' ')[0] : 'Loved');
     const lastName = newRecipient.lastName || (newRecipient.name ? newRecipient.name.split(' ').slice(1).join(' ') : 'One');
 
     const payload: Omit<CareRecipient, 'id' | 'createdAt' | 'updatedAt'> = {
-      createdByUserId: targetUserId,
+      createdByUserId: userId,
       firstName,
       lastName,
       preferredName: newRecipient.preferredName || firstName,
@@ -387,7 +404,7 @@ class CareRecipientService {
       importantNotes: newRecipient.importantNotes || newRecipient.notes
     };
 
-    return this.createRecipient(payload, targetUserId);
+    return this.createRecipient(payload, userId);
   }
 
   /**
@@ -398,9 +415,28 @@ class CareRecipientService {
     updates: Partial<CareRecipient>,
     userId?: string
   ): CareRecipient | null {
-    const targetUserId = userId || 'u_family_sample';
-    const list = this.listRecipientsForFamily(targetUserId);
-    const index = list.findIndex(r => r.id === id);
+    if (!userId) {
+      throw new Error('Authentication required to update a Care Recipient.');
+    }
+
+    // Find recipient in creator's list or shared list
+    let ownerUserId = userId;
+    let list = this.userRecipientsMap.get(userId) || [];
+    let index = list.findIndex(r => r.id === id);
+
+    if (index === -1) {
+      // Check if user is an authorized coordinator for this recipient
+      for (const [uid, uList] of this.userRecipientsMap.entries()) {
+        const foundIndex = uList.findIndex(r => r.id === id);
+        if (foundIndex !== -1) {
+          ownerUserId = uid;
+          list = uList;
+          index = foundIndex;
+          break;
+        }
+      }
+    }
+
     if (index === -1) return null;
 
     const current = list[index];
@@ -428,7 +464,7 @@ class CareRecipientService {
     };
 
     list[index] = updated;
-    this.userRecipientsMap.set(targetUserId, list);
+    this.userRecipientsMap.set(ownerUserId, list);
     this.saveToStorage();
 
     return updated;
@@ -436,26 +472,42 @@ class CareRecipientService {
 
   /**
    * Delete / Remove a Care Recipient profile.
-   * Architecture supports soft deletion / archiving.
    */
   public deleteRecipient(id: string, userId?: string): boolean {
-    const targetUserId = userId || 'u_family_sample';
-    const list = this.listRecipientsForFamily(targetUserId);
-    const filtered = list.filter(r => r.id !== id);
+    if (!userId) {
+      throw new Error('Authentication required to delete a Care Recipient.');
+    }
+
+    let ownerUserId = userId;
+    let list = this.userRecipientsMap.get(userId) || [];
+    let filtered = list.filter(r => r.id !== id);
+
+    if (filtered.length === list.length) {
+      // Check if creator is different
+      for (const [uid, uList] of this.userRecipientsMap.entries()) {
+        const f = uList.filter(r => r.id !== id);
+        if (f.length !== uList.length) {
+          ownerUserId = uid;
+          list = uList;
+          filtered = f;
+          break;
+        }
+      }
+    }
+
     if (filtered.length === list.length) return false;
 
-    this.userRecipientsMap.set(targetUserId, filtered);
+    this.userRecipientsMap.set(ownerUserId, filtered);
     this.saveToStorage();
 
-    // If active recipient was deleted, reassign or clear
-    const active = this.getActiveRecipient(targetUserId);
+    const active = this.getActiveRecipient(userId);
     if (active && active.id === id) {
       if (filtered.length > 0) {
-        this.setActiveRecipientId(filtered[0].id, targetUserId);
+        this.setActiveRecipientId(filtered[0].id, userId);
       } else {
-        this.activeRecipientIdMap.delete(targetUserId);
+        this.activeRecipientIdMap.delete(userId);
         try {
-          localStorage.removeItem(`${STORAGE_KEY_ACTIVE}_${targetUserId}`);
+          localStorage.removeItem(`${STORAGE_KEY_ACTIVE}_${userId}`);
         } catch {
           // Ignore
         }
@@ -526,7 +578,6 @@ class CareRecipientService {
     if (!recipient) return false;
 
     const filtered = (recipient.emergencyContacts || []).filter(c => c.id !== contactId);
-    // Ensure at least one primary if contacts remain and previous primary was removed
     if (filtered.length > 0 && !filtered.some(c => c.isPrimary)) {
       filtered[0].isPrimary = true;
     }
@@ -535,8 +586,14 @@ class CareRecipientService {
     return true;
   }
 
-  public getFamilyMembers(): FamilyMember[] {
-    return [...this.familyMembers];
+  /**
+   * Scoped family members lookup for a specific Care Recipient.
+   */
+  public getFamilyMembers(recipientId?: string): FamilyMember[] {
+    if (recipientId) {
+      return familyCircleService.listMembers(recipientId);
+    }
+    return [];
   }
 
   public getAlerts(recipientId?: string): CareAlert[] {
@@ -548,4 +605,5 @@ class CareRecipientService {
 }
 
 export const careRecipientService = new CareRecipientService();
+
 

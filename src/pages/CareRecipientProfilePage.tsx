@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
+import { useAuthContext } from '../context/AuthContext';
 import { CareRecipientProfileHeader } from '../components/care/CareRecipientProfileHeader';
 import { CareNeedsSelector } from '../components/care/CareNeedsSelector';
 import { MobilitySelector } from '../components/care/MobilitySelector';
@@ -9,7 +10,10 @@ import { CommunicationSelector } from '../components/care/CommunicationSelector'
 import { CarePreferencesForm } from '../components/care/CarePreferencesForm';
 import { EmergencyContactForm } from '../components/care/EmergencyContactForm';
 import { CareRecipientSwitcher } from '../components/care/CareRecipientSwitcher';
+import { InviteFamilyModal } from '../components/family/InviteFamilyModal';
 import { Button } from '../components/Button';
+import { familyCircleService } from '../services/familyCircleService';
+import { familyAuthorizationService } from '../services/familyAuthorizationService';
 import { 
   CareRecipient, 
   RelationshipType, 
@@ -18,7 +22,8 @@ import {
   CarePreferences, 
   CommunicationPreferences, 
   EmergencyContact,
-  CareRecipientLocation 
+  CareRecipientLocation,
+  FamilyMember 
 } from '../types';
 import { 
   Heart, 
@@ -34,19 +39,22 @@ import {
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Home
+  Home,
+  UserPlus,
+  Clock
 } from 'lucide-react';
 
 export default function CareRecipientProfilePage() {
   const { recipientId } = useParams<{ recipientId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuthContext();
   const { 
     careRecipients, 
     activeCareRecipient, 
     updateCareRecipient, 
     removeCareRecipient, 
-    familyMembers,
+    refreshFamilyMembers,
     isRTL 
   } = useAppContext();
 
@@ -55,8 +63,9 @@ export default function CareRecipientProfilePage() {
     ? careRecipients.find(r => r.id === recipientId) 
     : activeCareRecipient) || null;
 
-  // Edit Mode state
+  // Modals & local state
   const [isEditing, setIsEditing] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editPreferredName, setEditPreferredName] = useState('');
@@ -76,6 +85,33 @@ export default function CareRecipientProfilePage() {
   // Delete modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Dynamic Circle Members for this specific recipient
+  const circleMembers = useMemo(() => {
+    if (!targetRecipient) return [];
+    return familyCircleService.listMembers(targetRecipient.id);
+  }, [targetRecipient?.id]);
+
+  // Authorization checks
+  const canEditCareProfile = useMemo(() => {
+    if (!targetRecipient || !user?.id) return false;
+    return familyAuthorizationService.can(user.id, targetRecipient.id, 'edit_care_profile');
+  }, [targetRecipient?.id, user?.id]);
+
+  const canManageCareProfile = useMemo(() => {
+    if (!targetRecipient || !user?.id) return false;
+    return familyAuthorizationService.can(user.id, targetRecipient.id, 'manage_care_profile');
+  }, [targetRecipient?.id, user?.id]);
+
+  const canInviteFamily = useMemo(() => {
+    if (!targetRecipient || !user?.id) return false;
+    return familyAuthorizationService.can(user.id, targetRecipient.id, 'invite_family');
+  }, [targetRecipient?.id, user?.id]);
+
+  const canViewSensitive = useMemo(() => {
+    if (!targetRecipient || !user?.id) return false;
+    return familyAuthorizationService.can(user.id, targetRecipient.id, 'view_sensitive_information');
+  }, [targetRecipient?.id, user?.id]);
 
   // Initialize edit form values when opening edit
   const openEditModal = () => {
@@ -183,6 +219,8 @@ export default function CareRecipientProfilePage() {
         onTellNeeds={() => navigate(`/chat?recipient=${targetRecipient.id}`)}
         onAddRecipient={() => navigate('/onboarding?mode=add')}
         onRemove={() => setShowDeleteModal(true)}
+        canEdit={canEditCareProfile}
+        canRemove={canManageCareProfile}
       />
 
       {/* SECTION 1: CARE NEEDS & ASSISTANCE */}
@@ -201,12 +239,14 @@ export default function CareRecipientProfilePage() {
               </span>
             </div>
           </div>
-          <button
-            onClick={openEditModal}
-            className="text-xs text-primary-700 hover:text-primary-800 font-semibold"
-          >
-            {t('care_profile.edit_profile')}
-          </button>
+          {canEditCareProfile && (
+            <button
+              onClick={openEditModal}
+              className="text-xs text-primary-700 hover:text-primary-800 font-semibold"
+            >
+              {t('care_profile.edit_profile')}
+            </button>
+          )}
         </div>
 
         {targetRecipient.careNeeds && targetRecipient.careNeeds.length > 0 ? (
@@ -364,40 +404,84 @@ export default function CareRecipientProfilePage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-text-900">
-                Family Circle
+                {t('family_circle.title', 'Family Circle')}
               </h2>
               <span className="text-[11px] text-text-500">
-                Collaborating on {displayName}'s care
+                {t('family_circle.collaborating_on_care', 'Authorized care coordination team for {{name}}', { name: displayName })}
               </span>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="text-xs text-primary-700 hover:text-primary-800 font-semibold"
-          >
-            Manage Circle
-          </button>
+          <div className="flex items-center gap-2">
+            {canInviteFamily && (
+              <button
+                type="button"
+                onClick={() => setShowInviteModal(true)}
+                className="text-xs text-primary-700 hover:text-primary-800 font-semibold flex items-center gap-1 bg-primary-50 px-2.5 py-1 rounded-lg transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>{t('family_circle.invite_member', 'Invite')}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate(`/care/${targetRecipient.id}/family`)}
+              className="text-xs text-primary-700 hover:text-primary-800 font-semibold flex items-center gap-0.5"
+            >
+              <span>{t('family_circle.manage_circle', 'Manage Circle')}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2 pt-1">
-          {familyMembers.map(member => (
-            <div key={member.id} className="p-3 bg-surface-50 rounded-2xl flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-surface-200 text-text-700 flex items-center justify-center font-bold text-xs">
-                  {member.name.charAt(0)}
+          {circleMembers.length > 0 ? (
+            circleMembers.map(member => (
+              <div key={member.id} className="p-3 bg-surface-50 rounded-2xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-surface-200 text-text-700 flex items-center justify-center font-bold text-xs">
+                    {member.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-text-900">{member.name}</span>
+                      {(member.invitationStatus === 'pending' || member.invitationStatus === 'invited') && (
+                        <span className="text-[10px] bg-amber-100 text-amber-800 font-medium px-1.5 py-0.2 rounded-md flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" /> Pending
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-text-500 text-[10px]">
+                      {member.relationshipToRecipient} • {String(member.role).replace(/_/g, ' ')}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-semibold text-text-900 block">{member.name}</span>
-                  <span className="text-text-500 text-[10px]">{member.relationshipToRecipient} • {member.role.replace('_', ' ')}</span>
+                <div className="flex items-center gap-1.5">
+                  {member.isEmergencyContact && (
+                    <span className="text-[10px] bg-primary-100 text-primary-800 font-semibold px-2 py-0.5 rounded-full">
+                      Emergency
+                    </span>
+                  )}
+                  {(member.role === 'CARE_COORDINATOR' || member.role === 'care_coordinator' || member.role === 'primary_coordinator') && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                      <ShieldCheck className="w-3 h-3" /> Coordinator
+                    </span>
+                  )}
                 </div>
               </div>
-              {member.isEmergencyContact && (
-                <span className="text-[10px] bg-primary-100 text-primary-800 font-semibold px-2 py-0.5 rounded-full">
-                  Emergency
-                </span>
-              )}
+            ))
+          ) : (
+            <div className="text-center py-4 text-text-400 text-xs">
+              No family members invited yet.
             </div>
-          ))}
+          )}
+
+          <button
+            type="button"
+            onClick={() => navigate(`/care/${targetRecipient.id}/family`)}
+            className="w-full text-center text-xs text-primary-700 hover:text-primary-800 font-semibold pt-2 pb-1 transition-colors block"
+          >
+            {t('family_circle.view_all_members_activity', 'View all members, permissions & circle activity →')}
+          </button>
         </div>
       </div>
 
@@ -584,6 +668,19 @@ export default function CareRecipientProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* INVITE FAMILY MEMBER MODAL */}
+      {showInviteModal && targetRecipient && user && (
+        <InviteFamilyModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          careRecipientId={targetRecipient.id}
+          careRecipientName={displayName}
+          onInvited={() => {
+            refreshFamilyMembers();
+          }}
+        />
       )}
     </div>
   );

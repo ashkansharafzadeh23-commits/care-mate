@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { Search, HeartPulse, Sparkles, Bell, ChevronRight, Heart } from 'lucide-react';
+import { Search, HeartPulse, Sparkles, Bell, ChevronRight, Heart, Users } from 'lucide-react';
 import { EmergencyFAB } from '../components/EmergencyFAB';
 import { CareRecipientSwitcher } from '../components/care/CareRecipientSwitcher';
 import { CareRecipientEmptyState } from '../components/care/CareRecipientEmptyState';
@@ -71,6 +71,35 @@ export default function HomePage() {
 
               <div className="flex items-center text-primary-600 ps-2">
                 <span className="text-xs font-semibold me-1 hidden sm:inline">{t('care_profile.title')}</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          )}
+
+          {/* Family Circle Coordination Banner */}
+          {activeCareRecipient && (
+            <div 
+              onClick={() => navigate(`/care/${activeCareRecipient.id}/family`)}
+              className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-emerald-50 transition-colors shadow-2xs"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-emerald-950">Family Circle</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.2 rounded-full">
+                      Team
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 mt-0.5">
+                    Coordinate care & permissions for {recipientName}
+                  </p>
+                </div>
+              </div>
+              <div className="text-emerald-700 flex items-center gap-1 text-xs font-semibold">
+                <span className="hidden sm:inline">Manage</span>
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
