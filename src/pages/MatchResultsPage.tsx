@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ShieldCheck, Star, MapPin } from 'lucide-react';
@@ -6,57 +6,18 @@ import { Button } from '../components/Button';
 import { useAppContext } from '../context/AppContext';
 import { Provider } from '../types';
 import { ProviderProfileModal } from '../components/ProviderProfileModal';
-
-const MOCK_PROVIDERS: Provider[] = [
-  {
-    id: 'prov_1',
-    name: 'Sarah Jenkins',
-    title: 'Certified Nursing Assistant',
-    matchScore: 94,
-    matchReasonEN: 'Excellent match for mobility assistance & Tuesday/Thursday schedule.',
-    matchReasonFA: 'تطابق عالی برای کمک به تحرک و برنامه سه‌شنبه/پنجشنبه.',
-    yearsExperience: 8,
-    rate: 28,
-    distance: '3.2 mi',
-    specialtiesEN: ['Mobility Support', 'Dementia Care', 'Medication Mgmt'],
-    specialtiesFA: ['پشتیبانی تحرک', 'مراقبت از زوال عقل', 'مدیریت دارو'],
-    isIdentityVerified: true,
-    isBackgroundChecked: true,
-    isLicenseVerified: true,
-    avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
-    aboutEN: 'I have been a CNA for 8 years, specializing in elder care and mobility support. I believe in compassionate, patient-centered care.',
-    aboutFA: 'من به مدت ۸ سال کمک پرستار بوده‌ام و در مراقبت از سالمندان و پشتیبانی تحرک تخصص دارم.',
-    reviewsCount: 42,
-    rating: 4.9
-  },
-  {
-    id: 'prov_2',
-    name: 'David Chen',
-    title: 'Registered Nurse',
-    matchScore: 88,
-    matchReasonEN: 'Strong medical background, matches your schedule requirements.',
-    matchReasonFA: 'پیشینه قوی پزشکی، مطابق با نیازهای زمانی شما.',
-    yearsExperience: 12,
-    rate: 45,
-    distance: '5.1 mi',
-    specialtiesEN: ['Wound Care', 'Post-Op Recovery', 'Vitals Monitoring'],
-    specialtiesFA: ['مراقبت از زخم', 'ریکاوری بعد از عمل', 'نظارت بر علائم حیاتی'],
-    isIdentityVerified: true,
-    isBackgroundChecked: true,
-    isLicenseVerified: true,
-    avatarUrl: 'https://i.pravatar.cc/150?u=david',
-    aboutEN: 'Experienced RN with a background in ICU and home health. Detail-oriented and highly communicative with families.',
-    aboutFA: 'پرستار با تجربه با سابقه کار در بخش مراقبت‌های ویژه و بهداشت خانگی.',
-    reviewsCount: 128,
-    rating: 5.0
-  }
-];
+import { providerService } from '../services/providerService';
 
 export default function MatchResultsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { language } = useAppContext();
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+
+  useEffect(() => {
+    providerService.getMatchedProviders().then(setProviders);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-50 p-6 pt-safe">
@@ -70,7 +31,7 @@ export default function MatchResultsPage() {
       </header>
 
       <div className="space-y-6">
-        {MOCK_PROVIDERS.map(provider => (
+        {providers.map(provider => (
           <div key={provider.id} className="bg-white rounded-3xl border border-surface-200 overflow-hidden shadow-sm">
             {/* Trust Banner */}
             <div className="bg-primary-50 px-4 py-3 border-b border-primary-100 flex items-center justify-between">

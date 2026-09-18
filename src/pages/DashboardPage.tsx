@@ -5,36 +5,22 @@ import { CheckCircle2, AlertCircle, Heart, Pill, Calendar, Clock, Plus, Phone, B
 import { EmergencyFAB } from '../components/EmergencyFAB';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '../components/Button';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { bookingService } from '../services/bookingService';
+import { BillingTransaction } from '../types';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { parent } = useAppContext();
   const [showPushNotification, setShowPushNotification] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'payments'>('overview');
+  const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
+
+  useEffect(() => {
+    bookingService.getBillingHistory(parent?.id).then(setTransactions);
+  }, [parent?.id]);
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Billing & Booking History', 14, 22);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    autoTable(doc, {
-      startY: 36,
-      head: [['Date', 'Provider', 'Amount', 'Status']],
-      body: [
-        ['Sep 05, 2026', 'Sarah Jenkins', '$150', 'Paid'],
-        ['Aug 28, 2026', 'Michael Chen', '$120', 'Paid']
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [59, 130, 246] }
-    });
-    
-    doc.save('billing-history.pdf');
+    bookingService.generateBillingSummaryPDF(transactions, parent?.name || 'Care Recipient');
   };
 
   useEffect(() => {
@@ -249,10 +235,7 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="space-y-3">
-            {[
-              { id: 1, date: 'Sep 05, 2026', amount: 150, status: 'paid', provider: 'Sarah Jenkins' },
-              { id: 2, date: 'Aug 28, 2026', amount: 120, status: 'paid', provider: 'Michael Chen' },
-            ].map(bill => (
+            {transactions.map(bill => (
               <div key={bill.id} className="bg-white border border-surface-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-surface-50 flex items-center justify-center border border-surface-100">

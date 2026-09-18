@@ -6,6 +6,7 @@ import { Button } from '../components/Button';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { EmergencyFAB } from '../components/EmergencyFAB';
+import { aiCoordinatorService } from '../services/aiCoordinatorService';
 
 interface Message {
   id: string;
@@ -64,27 +65,30 @@ export default function ChatPage() {
     }
   };
 
-  const triggerAIResponse = (userText: string) => {
-    setTimeout(() => {
-      let aiResponse = "";
-      let isAction = false;
-
-      const lowerInput = userText.toLowerCase();
-      
-      if (lowerInput.includes('emergency') || lowerInput.includes('chest pain') || lowerInput.includes('fall')) {
-        aiResponse = "It sounds like this might be a medical emergency. I cannot provide medical diagnoses. Please call emergency services immediately.";
-      } else if (messages.length === 1) {
-        aiResponse = "I can certainly help you find a caregiver. What days of the week and roughly what hours do you need someone?";
-      } else if (messages.length === 3) {
-        aiResponse = "Got it. Tuesdays and Thursdays from 9am to 3pm. Does your mother have any specific needs, like mobility assistance or medication management?";
-      } else {
-        aiResponse = "I've found some excellent caregivers who match your schedule and requirements. Would you like to review them now?";
-        isAction = true;
-      }
-
-      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: aiResponse, isAction }]);
+  const triggerAIResponse = async (userText: string) => {
+    try {
+      const result = await aiCoordinatorService.processUserMessage(userText, messages);
+      setMessages(prev => [
+        ...prev, 
+        { 
+          id: Date.now().toString(), 
+          sender: 'ai', 
+          text: result.replyText, 
+          isAction: result.isAction 
+        }
+      ]);
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          sender: 'ai',
+          text: "I'm having trouble processing that right now. Please try again or reach out to our emergency support."
+        }
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
