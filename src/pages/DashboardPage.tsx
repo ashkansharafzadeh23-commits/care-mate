@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { CheckCircle2, AlertCircle, Heart, Pill, Calendar, Clock, Plus, Phone, Bell, X, PhoneCall, CreditCard, FileText, ChevronRight, Sparkles, Download } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Heart, Pill, Calendar, Clock, Plus, Phone, Bell, X, PhoneCall, CreditCard, FileText, ChevronRight, Sparkles, Download, UserCheck } from 'lucide-react';
 import { EmergencyFAB } from '../components/EmergencyFAB';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '../components/Button';
 import { bookingService } from '../services/bookingService';
 import { BillingTransaction } from '../types';
+import { CareRecipientSwitcher } from '../components/care/CareRecipientSwitcher';
+import { CareRecipientEmptyState } from '../components/care/CareRecipientEmptyState';
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const { parent } = useAppContext();
+  const navigate = useNavigate();
+  const { activeCareRecipient, careRecipients } = useAppContext();
   const [showPushNotification, setShowPushNotification] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'payments'>('overview');
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
 
+  const recipientName = activeCareRecipient?.preferredName || activeCareRecipient?.firstName || activeCareRecipient?.name || 'Loved One';
+
   useEffect(() => {
-    bookingService.getBillingHistory(parent?.id).then(setTransactions);
-  }, [parent?.id]);
+    bookingService.getBillingHistory(activeCareRecipient?.id).then(setTransactions);
+  }, [activeCareRecipient?.id]);
 
   const handleExportPDF = () => {
-    bookingService.generateBillingSummaryPDF(transactions, parent?.name || 'Care Recipient');
+    bookingService.generateBillingSummaryPDF(transactions, recipientName);
   };
 
   useEffect(() => {
@@ -30,6 +36,21 @@ export default function DashboardPage() {
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  if (careRecipients.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen bg-surface-50 p-6">
+        <header className="mt-12 mb-6">
+          <h1 className="text-2xl font-bold text-text-900 leading-tight">
+            {t('nav.dashboard')}
+          </h1>
+        </header>
+        <div className="my-auto py-8">
+          <CareRecipientEmptyState onAddClick={() => navigate('/onboarding?mode=add')} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-50 p-6 pb-24 relative overflow-x-hidden">
@@ -50,7 +71,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1 pt-0.5">
                 <h4 className="text-sm font-bold text-text-900 mb-0.5">Upcoming Care Appointment</h4>
-                <p className="text-sm text-text-600 leading-tight">Reminder: Sarah Jenkins is scheduled to arrive in exactly 24 hours (Tomorrow, 8:00 AM).</p>
+                <p className="text-sm text-text-600 leading-tight">Reminder: Caregiver scheduled for {recipientName} in 24 hours.</p>
               </div>
               <button 
                 onClick={() => setShowPushNotification(false)}
@@ -63,17 +84,32 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <header className="flex justify-between items-center mt-16 mb-4">
-        <h1 className="text-2xl font-bold text-text-900 leading-tight">
-          {t('dashboard.title', { name: parent?.name || 'Parent' })}
-        </h1>
-        <div className="flex">
-          <img src="https://i.pravatar.cc/150?u=a" alt="Family 1" className="w-8 h-8 rounded-full border-2 border-surface-50 relative z-20" />
-          <img src="https://i.pravatar.cc/150?u=b" alt="Family 2" className="w-8 h-8 rounded-full border-2 border-surface-50 -ms-2 relative z-10" />
-          <div className="w-8 h-8 rounded-full border-2 border-surface-50 bg-surface-200 flex items-center justify-center text-xs font-bold text-text-700 -ms-2 relative z-0">
-            <Plus className="w-3 h-3" />
+      <header className="mt-12 mb-4 space-y-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-text-900 leading-tight">
+              {t('dashboard.title', { name: recipientName })}
+            </h1>
+            <p className="text-xs text-text-500">Care Plan &amp; Activity</p>
           </div>
+
+          <CareRecipientSwitcher compact={true} />
         </div>
+
+        {activeCareRecipient && (
+          <div className="flex items-center justify-between bg-white rounded-2xl p-2.5 px-3 border border-surface-200 text-xs">
+            <span className="text-text-500">
+              {activeCareRecipient.customRelationship || t(`relationship.${activeCareRecipient.relationshipToPrimaryUser || 'other'}`)} • {activeCareRecipient.age} {t('care_profile.years_old')}
+            </span>
+            <button
+              onClick={() => navigate(`/care/${activeCareRecipient.id}`)}
+              className="text-primary-700 font-semibold hover:underline flex items-center gap-1"
+            >
+              <span>{t('care_profile.title')}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Tabs */}

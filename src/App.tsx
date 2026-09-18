@@ -19,6 +19,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import OnboardingPage from './pages/OnboardingPage';
+import CareRecipientProfilePage from './pages/CareRecipientProfilePage';
 import ChatPage from './pages/ChatPage';
 import MatchResultsPage from './pages/MatchResultsPage';
 import BookingPage from './pages/BookingPage';
@@ -118,6 +119,22 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['family']}>
                   <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/care/:recipientId"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <CareRecipientProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/care"
+              element={
+                <ProtectedRoute allowedRoles={['family']}>
+                  <CareRecipientProfilePage />
                 </ProtectedRoute>
               }
             />

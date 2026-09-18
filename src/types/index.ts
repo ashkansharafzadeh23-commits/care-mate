@@ -59,32 +59,144 @@ export interface FamilyMember {
   isEmergencyContact: boolean;
 }
 
+// ==========================================
+// CARE RECIPIENT & CARE GRAPH TYPES
+// ==========================================
+
+export type RelationshipType = 
+  | 'mother'
+  | 'father'
+  | 'grandmother'
+  | 'grandfather'
+  | 'spouse'
+  | 'relative'
+  | 'friend'
+  | 'other';
+
+export type CareNeedCategory =
+  | 'companionship'
+  | 'personal_care'
+  | 'bathing_assistance'
+  | 'dressing_assistance'
+  | 'meal_preparation'
+  | 'mobility_assistance'
+  | 'transportation'
+  | 'light_housekeeping'
+  | 'medication_reminders'
+  | 'post_hospital_support'
+  | 'memory_dementia_support'
+  | 'overnight_supervision'
+  | 'appointment_assistance'
+  | 'not_sure_yet'
+  | 'other';
+
+export type MobilityOption =
+  | 'independent'
+  | 'cane'
+  | 'walker'
+  | 'wheelchair'
+  | 'transfer_assistance'
+  | 'bedbound'
+  | 'prefer_not_to_answer'
+  | 'other';
+
+export interface CommunicationPreferences {
+  primaryLanguage?: string;
+  additionalLanguages?: string[];
+  preferences?: string[];
+  customCommunication?: string;
+}
+
+export interface CarePreferences {
+  caregiverGender?: 'no_preference' | 'female' | 'male';
+  preferredLanguage?: string;
+  nonSmokingPreferred?: boolean;
+  comfortableWithPets?: boolean;
+  recipientHasPets?: boolean;
+  transportationRequired?: boolean;
+  additionalNotes?: string;
+}
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  alternatePhone?: string;
+  isPrimary: boolean;
+}
+
+export interface CareRecipientLocation {
+  addressLine1?: string;
+  addressLine2?: string;
+  city: string;
+  state?: string;
+  postalCode?: string;
+  country: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 /**
  * CareRecipient is the central domain entity of CareMate.
- * A family can manage more than one CareRecipient (e.g., Mom and Dad).
+ * An authenticated Family user can coordinate care for multiple loved ones (e.g., Mother and Father).
  */
 export interface CareRecipient {
   id: string;
-  name: string;
+  familyId?: string;
+  createdByUserId: string;
+
+  firstName: string;
+  lastName: string;
   preferredName?: string;
-  age: number;
+
   dateOfBirth?: string;
+  age?: number;
+
+  relationshipToPrimaryUser: RelationshipType;
+  customRelationship?: string;
+
+  profilePhotoUrl?: string;
+
+  primaryLanguage?: Language | string;
+  additionalLanguages?: string[];
+
+  location: CareRecipientLocation;
+
+  careNeeds: (CareNeedCategory | string)[];
+  customCareNeed?: string;
+
+  mobility?: MobilityOption;
+  customMobility?: string;
+
+  communication?: CommunicationPreferences;
+
+  preferences?: CarePreferences;
+
+  emergencyContacts: EmergencyContact[];
+
   livingSituation?: string;
-  primaryLanguage?: Language;
+  importantNotes?: string;
+
+  createdAt: string;
+  updatedAt: string;
+
+  // Backward compatibility properties for existing prototype screens
+  name?: string;
+  notes?: string;
+  photoUrl?: string;
   address?: {
     city: string;
     state?: string;
     zip?: string;
   };
-  careNeeds: string[];
-  photoUrl?: string;
   emergencyContactIds?: string[];
-  notes?: string;
   medicalConditionsSummary?: string;
 }
 
 /**
  * Backward compatibility alias for the initial prototype
+ * TODO: Legacy backward compatibility alias, will be phased out in future iterations.
  */
 export type Parent = CareRecipient;
 
@@ -164,16 +276,6 @@ export interface CareMatchScore {
 // ==========================================
 // CARE GRAPH: NEEDS, REQUESTS, VISITS, ALERTS
 // ==========================================
-export type CareNeedCategory = 
-  | 'mobility' 
-  | 'medication' 
-  | 'memory_care' 
-  | 'personal_care' 
-  | 'companionship' 
-  | 'transportation' 
-  | 'meal_prep' 
-  | 'specialized_medical';
-
 export interface CareNeed {
   id: string;
   recipientId: string;

@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Send, Sparkles, AlertTriangle, Mic } from 'lucide-react';
+import { ChevronLeft, Send, Sparkles, AlertTriangle, Mic, Heart } from 'lucide-react';
 import { Button } from '../components/Button';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { EmergencyFAB } from '../components/EmergencyFAB';
 import { aiCoordinatorService } from '../services/aiCoordinatorService';
+import { useAppContext } from '../context/AppContext';
+import { CareRecipientSwitcher } from '../components/care/CareRecipientSwitcher';
 
 interface Message {
   id: string;
@@ -18,11 +20,26 @@ interface Message {
 export default function ChatPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { activeCareRecipient, careRecipients, setActiveCareRecipientId } = useAppContext();
+
+  // If URL parameter specifies recipient, set it active
+  const paramRecipientId = searchParams.get('recipient');
+  useEffect(() => {
+    if (paramRecipientId && paramRecipientId !== activeCareRecipient?.id) {
+      setActiveCareRecipientId(paramRecipientId);
+    }
+  }, [paramRecipientId, activeCareRecipient?.id, setActiveCareRecipientId]);
+
+  const recipientName = activeCareRecipient?.preferredName || activeCareRecipient?.firstName || activeCareRecipient?.name;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'ai',
-      text: "Hi there. I'm CareMate. How can I help you coordinate care today?"
+      text: recipientName 
+        ? `Hi there. I'm CareMate. How can I help coordinate care for ${recipientName} today?`
+        : "Hi there. I'm CareMate. How can I help you coordinate care today?"
     }
   ]);
   const [input, setInput] = useState('');
@@ -113,6 +130,13 @@ export default function ChatPage() {
         <AlertTriangle className="w-4 h-4 me-2 shrink-0 mt-0.5" />
         <p>{t('chat.disclaimer')}</p>
       </div>
+
+      {careRecipients.length > 0 && (
+        <div className="bg-surface-100/70 border-b border-surface-200 px-4 py-2 flex items-center justify-between text-xs">
+          <span className="text-text-500 font-medium">Care Recipient:</span>
+          <CareRecipientSwitcher compact={true} />
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.map((msg) => (

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Language, User, Parent, CareRecipient, FamilyMember, CareAlert } from '../types';
 import { careRecipientService } from '../services/careRecipientService';
@@ -9,14 +9,21 @@ interface AppContextType {
   setLanguage: (lang: Language) => void;
   // Authenticated user identity from AuthContext
   user: User | null;
-  // Backward-compatible single parent accessor
-  parent: Parent | null;
-  setParent: (parent: Parent | null) => void;
   // Core Care Graph multi-recipient support
   careRecipients: CareRecipient[];
   activeCareRecipient: CareRecipient | null;
+  activeRecipientId: string | null;
   setActiveRecipientId: (id: string) => void;
-  addCareRecipient: (newRecipient: Omit<CareRecipient, 'id'>) => CareRecipient;
+  setActiveCareRecipientId: (id: string) => void;
+  createCareRecipient: (data: Omit<CareRecipient, 'id' | 'createdAt' | 'updatedAt'>) => CareRecipient;
+  updateCareRecipient: (id: string, updates: Partial<CareRecipient>) => CareRecipient | null;
+  removeCareRecipient: (id: string) => boolean;
+  refreshCareRecipients: () => void;
+  // Backward-compatible single parent accessors
+  // TODO: Legacy backward compatibility accessors, will be phased out in future iterations.
+  parent: Parent | null;
+  setParent: (parent: Parent | null) => void;
+  addCareRecipient: (newRecipient: any) => CareRecipient;
   familyMembers: FamilyMember[];
   alerts: CareAlert[];
   isRTL: boolean;
@@ -30,9 +37,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [language, setLanguageState] = useState<Language>(() => user?.preferredLanguage || 'en');
   
   const [careRecipients, setCareRecipients] = useState<CareRecipient[]>(() => 
-    careRecipientService.getRecipients(user?.id)
+    user?.id ? careRecipientService.listRecipientsForFamily(user.id) : []
   );
-  const [activeRecipientId, setActiveRecipientIdState] = useState<string>('p1');
+  
+  const [activeRecipientId, setActiveRecipientIdState] = useState<string | null>(() => {
+    const active = user?.id ? careRecipientService.getActiveRecipient(user.id) : null;
+    return active ? active.id : null;
+  });
+
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => 
     careRecipientService.getFamilyMembers()
   );
@@ -40,20 +52,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     careRecipientService.getAlerts()
   );
 
+  const refreshCareRecipients = useCallback(() => {
+    if (!user?.id) {
+      setCareRecipients([]);
+      setActiveRecipientIdState(null);
+      return;
+    }
+    const list = careRecipientService.listRecipientsForFamily(user.id);
+    setCareRecipients(list);
+    const active = careRecipientService.getActiveRecipient(user.id);
+    setActiveRecipientIdState(active ? active.id : null);
+  }, [user?.id]);
+
   // Sync care recipients when authenticated user changes
   useEffect(() => {
-    const list = careRecipientService.getRecipients(user?.id);
-    setCareRecipients(list);
-    if (list.length > 0) {
-      setActiveRecipientIdState(list[0].id);
-      careRecipientService.setActiveRecipientId(list[0].id);
-    }
+    refreshCareRecipients();
     if (user?.preferredLanguage) {
       setLanguageState(user.preferredLanguage);
     }
-  }, [user?.id, user?.preferredLanguage]);
+  }, [user?.id, user?.preferredLanguage, refreshCareRecipients]);
 
-  const activeCareRecipient = careRecipients.find(r => r.id === activeRecipientId) || careRecipients[0] || null;
+  const activeCareRecipient: CareRecipient | null = 
+    (activeRecipientId ? careRecipients.find(r => r.id === activeRecipientId) : null) || 
+    (careRecipients.length > 0 ? careRecipients[0] : null);
 
   // Sync parent with activeCareRecipient for backward compatibility
   const parent = activeCareRecipient;
@@ -64,12 +85,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setActiveRecipientId = (id: string) => {
     setActiveRecipientIdState(id);
-    careRecipientService.setActiveRecipientId(id);
+    if (user?.id) {
+      careRecipientService.setActiveRecipientId(id, user.id);
+    }
   };
 
-  const addCareRecipient = (newRecipient: Omit<CareRecipient, 'id'>): CareRecipient => {
-    const created = careRecipientService.addRecipient(newRecipient, user?.id);
-    setCareRecipients(careRecipientService.getRecipients(user?.id));
+  const createCareRecipient = (data: Omit<CareRecipient, 'id' | 'createdAt' | 'updatedAt'>): CareRecipient => {
+    const targetUserId = user?.id || 'u_family_sample';
+    const created = careRecipientService.createRecipient(data, targetUserId);
+    refreshCareRecipients();
+    setActiveRecipientIdState(created.id);
+    return created;
+  };
+
+  const updateCareRecipient = (id: string, updates: Partial<CareRecipient>): CareRecipient | null => {
+    const targetUserId = user?.id || 'u_family_sample';
+    const updated = careRecipientService.updateRecipient(id, updates, targetUserId);
+    refreshCareRecipients();
+    return updated;
+  };
+
+  const removeCareRecipient = (id: string): boolean => {
+    const targetUserId = user?.id || 'u_family_sample';
+    const removed = careRecipientService.deleteRecipient(id, targetUserId);
+    refreshCareRecipients();
+    return removed;
+  };
+
+  // Backward compatibility alias for addCareRecipient
+  const addCareRecipient = (newRecipient: any): CareRecipient => {
+    const targetUserId = user?.id || 'u_family_sample';
+    const created = careRecipientService.addRecipient(newRecipient, targetUserId);
+    refreshCareRecipients();
     setActiveRecipientIdState(created.id);
     return created;
   };
@@ -96,7 +143,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setParent, 
         careRecipients,
         activeCareRecipient,
+        activeRecipientId,
         setActiveRecipientId,
+        setActiveCareRecipientId: setActiveRecipientId,
+        createCareRecipient,
+        updateCareRecipient,
+        removeCareRecipient,
+        refreshCareRecipients,
         addCareRecipient,
         familyMembers,
         alerts,

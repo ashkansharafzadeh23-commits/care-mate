@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
 import { useAuthContext } from '../context/AuthContext';
-import { Globe, Bell, CreditCard, LogOut, Users, Sparkles, User as UserIcon, Shield } from 'lucide-react';
+import { Globe, Bell, CreditCard, LogOut, Users, Sparkles, User as UserIcon, Shield, Heart, Plus, ChevronRight } from 'lucide-react';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { language, setLanguage } = useAppContext();
+  const { language, setLanguage, careRecipients, activeRecipientId, setActiveCareRecipientId } = useAppContext();
   const { user, logout } = useAuthContext();
 
   const handleLogout = async () => {
@@ -18,11 +18,11 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface-50 p-6">
-      <header className="mt-4 mb-8">
+      <header className="mt-4 mb-6">
         <h1 className="text-2xl font-bold text-text-900">{t('settings.title')}</h1>
       </header>
 
-      <div className="flex items-center p-4 bg-white rounded-3xl border border-surface-200 shadow-sm mb-8">
+      <div className="flex items-center p-4 bg-white rounded-3xl border border-surface-200 shadow-sm mb-6">
         <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 me-4 text-xl font-bold shrink-0">
           {user?.firstName?.charAt(0) || user?.name?.charAt(0) || 'U'}
         </div>
@@ -40,6 +40,76 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-4">
+        {/* Care Recipients Section (For Family Users) */}
+        {user?.role === 'family' && (
+          <div className="bg-white rounded-3xl border border-surface-200 p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-surface-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
+                  <Heart className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-sm text-text-900">Care Recipients</span>
+              </div>
+              <button
+                onClick={() => navigate('/onboarding?mode=add')}
+                className="text-xs font-semibold text-primary-700 hover:text-primary-800 flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            </div>
+
+            {careRecipients.length > 0 ? (
+              <div className="space-y-2">
+                {careRecipients.map((recipient) => {
+                  const name = recipient.preferredName || recipient.firstName || recipient.name || 'Loved One';
+                  const isActive = recipient.id === activeRecipientId;
+                  return (
+                    <div
+                      key={recipient.id}
+                      className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                        isActive ? 'bg-primary-50/50 border-primary-300' : 'bg-surface-50 border-surface-200'
+                      }`}
+                    >
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer flex-1"
+                        onClick={() => setActiveCareRecipientId(recipient.id)}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-white text-primary-700 flex items-center justify-center font-bold text-xs border border-surface-200">
+                          {name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-xs text-text-900">{name}</span>
+                            {isActive && (
+                              <span className="text-[9px] bg-primary-200/60 text-primary-900 px-1.5 py-0.5 rounded-full font-bold">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-text-500">
+                            {recipient.customRelationship || t(`relationship.${recipient.relationshipToPrimaryUser || 'other'}`)} • {recipient.age} yrs
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => navigate(`/care/${recipient.id}`)}
+                        className="p-1.5 text-text-400 hover:text-primary-700 rounded-lg ms-2"
+                        title="View Profile"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-text-400 py-1">No care recipients added yet.</p>
+            )}
+          </div>
+        )}
+
         {/* Language Toggle */}
         <div className="bg-white rounded-3xl border border-surface-200 overflow-hidden shadow-sm">
           <div className="p-4 flex items-center justify-between border-b border-surface-100 last:border-0">
